@@ -34,7 +34,7 @@ function Get-AppleDeviceLocation
 
     $LoginData = Invoke-RestMethod -Uri $LoginUri -Body $PayloadJsonObj -Headers $Header -Method Post -SessionVariable iCloudSession -UserAgent ([Microsoft.PowerShell.Commands.PSUserAgent]::Chrome)
 
-    $FindMyiPhoneURI = "https://p02-fmipweb.icloud.com/fmipservice/client/web/refreshClient?clientBuildNumber=$clientBuildNumber&clientId=$($LoginData.dsInfo.aDsID)&dsid=$($LoginData.dsInfo.dsid)"
+    $FindMyiPhoneURI = "https://p36-fmipweb.icloud.com/fmipservice/client/web/refreshClient?clientBuildNumber=$clientBuildNumber&clientId=$($LoginData.dsInfo.aDsID)&dsid=$($LoginData.dsInfo.dsid)"
     # $FindMyiPhoneURI = "https://p02-fmipweb.icloud.com/fmipservice/client/web/refreshClient?clientBuildNumber=$clientBuildNumber&clientId=$clientId&dsid=$($LoginData.dsInfo.dsid)"
 
     $LocationPayload = @{
