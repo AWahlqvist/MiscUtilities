@@ -1,5 +1,74 @@
 function Add-Logo
 {
+
+    <#
+    .SYNOPSIS
+    This function can add a logotype to another picture
+
+    .DESCRIPTION
+    This function can be used to place a picture (usually a logo) on top of
+    another picture. You can either just place it in the same corner/position
+    on each one, or use the "Dynamic logo placement" functionality to let the
+    function calculate the best possible placement (out of the four corners).
+
+    That calculation is done by calculating the contrast and "how much is
+    going on" in every corner (number of different colors).
+
+    You can set the accurancy (number of sampled pictures) to your liking,
+    but it will be painfully slow on big pictures if you set it too high.
+
+    .PARAMETER BackgroundPictureFile
+    The path to the picture file that should be used as a background
+
+    .PARAMETER LogoPictureFile
+    The path to the logo picture file
+
+    .PARAMETER OutPath
+    Where to place the resulting file
+
+    .PARAMETER LogoPlacement
+    The corner where the logo should be placed
+
+    .PARAMETER DynamicLogoPlacement
+    Specify this switch if you want the function to calculate the best
+    possible corner for the logo (see Description of this function)
+
+    .PARAMETER DynamicPlacementAccuracy
+    This decides how many pixels will be sampled before placing the logo.
+
+    The higher value the better the accuracy, but it will be slower.
+
+    .PARAMETER MinimumContrast
+    This value set the minimum acceptable contrast when placing the logo
+
+    .PARAMETER MaxColorSpan
+    This value set the maximum allowed color span of the background where
+    the logo will be placed. Can be used to force the placement to a corner
+    where things are a bit more "calm".
+
+    .PARAMETER HorisontalDisplacementFactor
+    Sets the position of the logo relative to the edge (horisontal)
+
+    .PARAMETER VerticalDisplacementFactor
+    Sets the position of the logo relative to the edge (vertical)
+
+    .PARAMETER ProportionFactor
+    Use this value to scale the logo relative to the background picture
+    size
+
+    .EXAMPLE
+    Add-Logo -LogoPictureFile .\Logo.png -BackgroundPictureFile .\Background.jpg -DynamicLogoPlacement
+
+    Will place the picture "Logo.png" on the background 'Background.jpg' and save the results as a new file.
+
+    .EXAMPLE
+    gci *.jpg | Add-Logo -LogoPictureFile .\Logo.png -OutPath .\PicturesWithLogos -DynamicLogoPlacement
+
+    Will place the picture 'Logo.png' on all the jpg-files piped to the function and output them to the
+    'PicturesWithLogos' folder.
+
+    #>
+
     [cmdletbinding(DefaultParameterSetName='StaticLogoPlacement')]
     Param(
         [Parameter(Mandatory=$True, ValueFromPipeline=$true, ValueFromPipelineByPropertyName=$true)]
@@ -36,8 +105,8 @@ function Add-Logo
         $OutFilePath = Get-ChildItem $BackgroundPictureFile
         $LogoFileName = Get-ChildItem $LogoPictureFile
 
-        $BackgroundPicture = New-Object System.Drawing.Bitmap $BackgroundPictureFile
-        $LogoPicture = New-Object System.Drawing.Bitmap $LogoPictureFile
+        $BackgroundPicture = New-Object System.Drawing.Bitmap (Resolve-Path $BackgroundPictureFile).Path
+        $LogoPicture = New-Object System.Drawing.Bitmap (Resolve-Path $LogoPictureFile).Path
 
         [decimal] $LogoSizeFactor = $BackgroundPicture.Width/$ProportionFactor/$LogoPicture.Width
         $LogoWidth = $LogoPicture.Width * $LogoSizeFactor
@@ -221,7 +290,8 @@ function Add-Logo
 
         $NewPictureDrawing.DrawImage($LogoPicture, $HorizontalPlacement, $VerticalPlacement, $LogoWidth, $LogoHeight)
 
-        $NewBackgroundPicture.Save($OutFileFullPath,([system.drawing.imaging.imageformat]::Jpeg))
+        $SavePath = Join-Path -Path (Resolve-Path (Split-Path $OutFileFullPath -Parent)).Path -ChildPath (Split-Path $OutFileFullPath -Leaf)
+        $NewBackgroundPicture.Save($SavePath,([system.drawing.imaging.imageformat]::Jpeg))
 
         $BackgroundPicture.Dispose()
         $LogoPicture.Dispose()
