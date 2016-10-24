@@ -19,7 +19,7 @@ function Get-SMHIWeatherData
         $RoundedLong = [System.Math]::Round($Longitude,6)
         $RoundedLat = [System.Math]::Round($Latitude,6)
 
-        $URL = "http://opendata-download-metfcst.smhi.se/api/category/pmp1.5g/version/1/geopoint/lat/$RoundedLat/lon/$RoundedLong/data.json"
+        $URL = "http://opendata-download-metfcst.smhi.se/api/category/pmp1.5g/version/2/geotype/point/lon/$RoundedLong/lat/$RoundedLat/data.json"
 
         try {
             $Data = Invoke-RestMethod -Uri $URL -Method Get -ErrorAction Stop
@@ -29,8 +29,9 @@ function Get-SMHIWeatherData
         }
 
         foreach ($DailyForecast in $Data.timeseries) {
+            $ConvertedObj = $DailyForecast.parameters | % { @{ "$($_.name)" = "$($_.values)" } }
 
-            $PrecipitationCategory = switch ($DailyForecast.pcat)
+            $PrecipitationCategory = switch ($ConvertedObj.pcat)
             {
                       0 { "None" }
                       1 { "Snow" }
@@ -43,8 +44,6 @@ function Get-SMHIWeatherData
             }
 
             $returnObject = New-Object System.Object
-            $returnObject | Add-Member -Type NoteProperty -Name Latitude -Value $Data.lon
-            $returnObject | Add-Member -Type NoteProperty -Name Longitude -Value $Data.lat
 
             # Fix this for the first forecast
             if ($PreviousForecast -eq $null) {
@@ -55,20 +54,20 @@ function Get-SMHIWeatherData
             }
 
             $returnObject | Add-Member -Type NoteProperty -Name ForecastEndDate -Value $(Get-Date $DailyForecast.validTime -Format "yyyy-MM-dd HH:mm:ss")
-            $returnObject | Add-Member -Type NoteProperty -Name Pressure -Value $DailyForecast.msl
-            $returnObject | Add-Member -Type NoteProperty -Name Temperature -Value $DailyForecast.t
-            $returnObject | Add-Member -Type NoteProperty -Name Visibility -Value $DailyForecast.vis
-            $returnObject | Add-Member -Type NoteProperty -Name WindDirection -Value $DailyForecast.wd
-            $returnObject | Add-Member -Type NoteProperty -Name WindVelocity -Value $DailyForecast.ws
-            $returnObject | Add-Member -Type NoteProperty -Name RelativeHumidity -Value $DailyForecast.r
-            $returnObject | Add-Member -Type NoteProperty -Name ThunderstormProbability -Value $DailyForecast.tstm
-            $returnObject | Add-Member -Type NoteProperty -Name TotalCloudCover -Value $($DailyForecast.tcc*12.5)
-            $returnObject | Add-Member -Type NoteProperty -Name LowCloudCover -Value $($DailyForecast.lcc*12.5)
-            $returnObject | Add-Member -Type NoteProperty -Name MediumCloudCover -Value $($DailyForecast.mcc*12.5)
-            $returnObject | Add-Member -Type NoteProperty -Name HighCloudCover -Value $($DailyForecast.hcc*12.5)
-            $returnObject | Add-Member -Type NoteProperty -Name WindGust -Value $DailyForecast.gust
-            $returnObject | Add-Member -Type NoteProperty -Name PrecipitationIntensityTotal -Value $DailyForecast.pit
-            $returnObject | Add-Member -Type NoteProperty -Name PrecipitationIntensitySnow -Value $DailyForecast.pis
+            $returnObject | Add-Member -Type NoteProperty -Name Pressure -Value $ConvertedObj.msl
+            $returnObject | Add-Member -Type NoteProperty -Name Temperature -Value $ConvertedObj.t
+            $returnObject | Add-Member -Type NoteProperty -Name Visibility -Value $ConvertedObj.vis
+            $returnObject | Add-Member -Type NoteProperty -Name WindDirection -Value $ConvertedObj.wd
+            $returnObject | Add-Member -Type NoteProperty -Name WindVelocity -Value $ConvertedObj.ws
+            $returnObject | Add-Member -Type NoteProperty -Name RelativeHumidity -Value $ConvertedObj.r
+            $returnObject | Add-Member -Type NoteProperty -Name ThunderstormProbability -Value $ConvertedObj.tstm
+            $returnObject | Add-Member -Type NoteProperty -Name TotalCloudCover -Value $(([int] $ConvertedObj.tcc)*12.5)
+            $returnObject | Add-Member -Type NoteProperty -Name LowCloudCover -Value $(([int] $ConvertedObj.lcc)*12.5)
+            $returnObject | Add-Member -Type NoteProperty -Name MediumCloudCover -Value $(([int] $ConvertedObj.mcc)*12.5)
+            $returnObject | Add-Member -Type NoteProperty -Name HighCloudCover -Value $(([int] $ConvertedObj.hcc)*12.5)
+            $returnObject | Add-Member -Type NoteProperty -Name WindGust -Value $ConvertedObj.gust
+            $returnObject | Add-Member -Type NoteProperty -Name PrecipitationIntensityTotal -Value $ConvertedObj.pit
+            $returnObject | Add-Member -Type NoteProperty -Name PrecipitationIntensitySnow -Value $ConvertedObj.pis
             $returnObject | Add-Member -Type NoteProperty -Name PrecipitationCategory -Value $PrecipitationCategory
 
             Write-Output $returnObject
