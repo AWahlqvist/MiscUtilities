@@ -60,7 +60,6 @@ function Get-AppleDeviceInformation
     while ($WaitingForLocationFix -and $AttemptNr -lt $MaxTries) {
         $AttemptNr++
 
-        #$LoginData = Invoke-RestMethod -Uri $LoginDataFetchUri -Body $PayloadJsonObj -Headers $Header -Method Post -SessionVariable iCloudSession -UserAgent ([Microsoft.PowerShell.Commands.PSUserAgent]::Chrome)
         $LocationPostResults = Invoke-RestMethod -Uri $LocationURI -Body $LocationPayloadJsonObj -Method Post -Headers $LocationFetchHeaders -WebSession $iCloudSession -UserAgent ([Microsoft.PowerShell.Commands.PSUserAgent]::Chrome)
         
         foreach ($iOSDevice in $LocationPostResults.content) {
